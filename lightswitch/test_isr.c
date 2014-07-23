@@ -5,6 +5,10 @@ volatile uint8_t PIND;
 volatile uint8_t g_oldEncoderValue[2] = {0};
 volatile int16_t g_tickCount = 0;
 
+int8_t f[4][4] = { {0, -1, 0, 1},
+                   {1, 0, -1, 0},
+                   {0, 1, 0, -1},
+                   {-1, 0, 1, 0} };
 
 void isr_test()
 {
@@ -14,9 +18,11 @@ void isr_test()
 	if (EncoderValue == g_oldEncoderValue[1])
 		return;
 
-	g_tickCount += (EncoderValue - g_oldEncoderValue[1]) % 2;
+	int8_t delta = f[EncoderValue][g_oldEncoderValue[1]];
+	
+	g_tickCount += delta;
 
-	printf("EV: %o %o %o ticks: %d\n", g_oldEncoderValue[0], g_oldEncoderValue[1], EncoderValue, g_tickCount);
+	printf("EV: %o %o %o delta: %d ticks: %d\n", g_oldEncoderValue[0], g_oldEncoderValue[1], EncoderValue, delta, g_tickCount);
 	g_oldEncoderValue[0] = g_oldEncoderValue[1];
 	g_oldEncoderValue[1] = EncoderValue;
 }
@@ -26,10 +32,6 @@ void forward(int n)
 	printf("Forwards %d revs\n", n);
 	for (int i = 0; i < n; i++)
 	{
-		PIND = 0;
-		isr_test();
-		PIND = 1;
-		isr_test();
 		PIND = 0;
 		isr_test();
 		PIND = 1;

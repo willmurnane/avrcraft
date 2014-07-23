@@ -184,8 +184,10 @@ volatile uint16_t g_ints = 0;
 volatile int16_t g_tickCount = 0;
 volatile uint8_t g_oldEncoderValue[2] = {0};
 volatile uint8_t g_careAbout = 0;
-
-volatile uint8_t lastN[32];
+int8_t f[4][4] = { {0, -1, 0, 1},
+                   {1, 0, -1, 0},
+                   {0, 1, 0, -1},
+                   {-1, 0, 1, 0} };
 
 ISR (PCINT0_vect)
 {
@@ -201,8 +203,9 @@ ISR(PCINT2_vect)
 		EncoderValue ^= 0x1;
 	if (EncoderValue == g_oldEncoderValue[1])
 		return;
-
-	g_tickCount += (EncoderValue - g_oldEncoderValue[1]) % 2;
+	g_ints++;
+	int8_t delta = f[EncoderValue][g_oldEncoderValue[1]];
+	g_tickCount += delta;
 
 	g_oldEncoderValue[0] = g_oldEncoderValue[1];
 	g_oldEncoderValue[1] = EncoderValue;
@@ -268,11 +271,6 @@ int main( void )
 			sendchr( 0 );
 
 			int p = sprintf(resultbuffer, "Ticks: %d Toggle: %d ca: %d intcount: %d ", g_tickCount, g_send_toggle, g_careAbout, g_ints);
-			for (int i = 0; i < 32; i++)
-			{
-				resultbuffer[p+i] = '0' + lastN[i];
-			}
-			resultbuffer[p+32] = 0;
 			g_send_toggle = 0;
 			enc424j600_startsend( NetGetScratch() );
 			send_etherlink_header( 0x0800 );

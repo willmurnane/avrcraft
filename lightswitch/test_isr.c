@@ -2,23 +2,23 @@
 #include <stdint.h>
 
 volatile uint8_t PIND;
-volatile uint8_t g_oldEncoderValue = 2;
-volatile uint8_t g_lastChange = 1; // change to 2 to alter direction?
-volatile int8_t g_direction = 1;
+volatile uint8_t g_oldEncoderValue[2] = {0};
 volatile int16_t g_tickCount = 0;
+
 
 void isr_test()
 {
 	uint8_t EncoderValue = PIND & 0x3; // PD1 and PD0
-	if ((g_oldEncoderValue ^ EncoderValue) == g_lastChange)
-	{
-		g_direction *= -1;
-	}
-	g_tickCount += g_direction;
-	printf("EV: %o oEV: %o lc: %o ticks: %d\n", EncoderValue, g_oldEncoderValue, g_lastChange, g_tickCount);
-	
-	g_lastChange = g_oldEncoderValue ^ EncoderValue;
-	g_oldEncoderValue = EncoderValue;
+	if (EncoderValue & 0x2)
+		EncoderValue ^= 0x1;
+	if (EncoderValue == g_oldEncoderValue[1])
+		return;
+
+	g_tickCount += (EncoderValue - g_oldEncoderValue[1]) % 2;
+
+	printf("EV: %o %o %o ticks: %d\n", g_oldEncoderValue[0], g_oldEncoderValue[1], EncoderValue, g_tickCount);
+	g_oldEncoderValue[0] = g_oldEncoderValue[1];
+	g_oldEncoderValue[1] = EncoderValue;
 }
 
 void forward(int n)
@@ -26,6 +26,10 @@ void forward(int n)
 	printf("Forwards %d revs\n", n);
 	for (int i = 0; i < n; i++)
 	{
+		PIND = 0;
+		isr_test();
+		PIND = 1;
+		isr_test();
 		PIND = 0;
 		isr_test();
 		PIND = 1;

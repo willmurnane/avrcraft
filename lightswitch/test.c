@@ -180,8 +180,7 @@ void InitializeLightSwitch()
 	
 }
 
-volatile uint16_t g_ints = 0;
-volatile int16_t g_tickCount = 0;
+volatile int8_t g_tickCount = 0;
 volatile uint8_t g_oldEncoderValue[2] = {0};
 volatile uint8_t g_careAbout = 0;
 int8_t f[4][4] = { {0, -1, 0, 1},
@@ -203,7 +202,6 @@ ISR(PCINT2_vect)
 		EncoderValue ^= 0x1;
 	if (EncoderValue == g_oldEncoderValue[1])
 		return;
-	g_ints++;
 	int8_t delta = f[EncoderValue][g_oldEncoderValue[1]];
 	g_tickCount += delta;
 
@@ -211,6 +209,8 @@ ISR(PCINT2_vect)
 	g_oldEncoderValue[1] = EncoderValue;
 	PCIFR |= _BV(2);
 }
+
+const uint8_t lightDest = { 192, 168, 0, 49 };
 
 int main( void )
 {
@@ -270,19 +270,35 @@ int main( void )
 			TIFR2 |= _BV(TOV2);
 			sendchr( 0 );
 
-			int p = sprintf(resultbuffer, "Ticks: %d Toggle: %d ca: %d intcount: %d ", g_tickCount, g_send_toggle, g_careAbout, g_ints);
+			int8_t diff = 0;
+			uint8_t toggle = 0;
+			cli();
+			diff = g_tickCount;
+			g_tickCount = 0;
+			toggle = g_send_toggle;
 			g_send_toggle = 0;
-			enc424j600_startsend( NetGetScratch() );
-			send_etherlink_header( 0x0800 );
+			sei();
+			if (toggle != 0 || diff != 0)
+			{
+				int macIndex = RequestARP(lightDest);
+				if (macIndex != -1)
+				{
+					memcpy(macfrom, ClientArpTable[i].mac, 6);
+				}
+				
+				enc424j600_startsend( NetGetScratch() );
+				send_etherlink_header( 0x0800 );
 
-			send_ip_header( 0, "\x01\x01\x01\x01", 17 ); //UDP Packet to 1.1.1.1
-			PUSH16(12345); // src port
-			PUSH16(23456); // dst port
-			PUSH16(0); // length goes here
-			PUSH16(0); // checksum goes here
-			enc424j600_pushstr(resultbuffer);
-			util_finish_udp_packet();
-
+				send_ip_header( 0, lightDest, 17 );
+				PUSH16(12345); // src port
+				PUSH16(1248); // dst port
+				PUSH16(0); // length goes here
+				PUSH16(0); // checksum goes here
+				PUSH16(0x0010);
+				PUSH(toggle);
+				PUSH16(diff);
+				util_finish_udp_packet();
+			}
 			delayctr++;
 			if( delayctr==10 )
 			{

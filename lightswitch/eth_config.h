@@ -50,7 +50,7 @@
 
 
 //DHCP will allow your device to automatically acquire an IP address. 
-#undef ENABLE_DHCP_CLIENT
+#define ENABLE_DHCP_CLIENT
 
 
 //UDP is pretty well tested.  It takes up ~350 bytes

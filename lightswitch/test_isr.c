@@ -60,8 +60,12 @@ void backward(int n)
 
 int main()
 {
-	forward(3);
+/*	forward(3);
 	backward(5);
-	forward(3);
+	forward(3); */ 
+
+	for (int i = 0; i < 4; i++)
+		for (int j = 0; j < 4; j++)
+			printf("%3d %3d %3d %3d\n", i, j, f[i][j], (3*i+j) %4 - 2);
 	return 0;
 }

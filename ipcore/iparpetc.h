@@ -49,7 +49,7 @@ void HandleUDP( uint16_t len );
 //Returns -1 if arp not found yet.
 //Otherwise returns entry into ARP table.
 
-int8_t RequestARP( uint8_t * ip );
+int8_t RequestARP( const uint8_t * ip );
 
 struct ARPEntry
 {
@@ -58,6 +58,10 @@ struct ARPEntry
 };
 
 extern uint8_t ClientArpTablePointer;
+
+#ifndef ARP_CLIENT_TABLE_SIZE
+#error Define ARP_CLIENT_TABLE_SIZE if using ARP.
+#endif
 extern struct ARPEntry ClientArpTable[ARP_CLIENT_TABLE_SIZE];
 
 

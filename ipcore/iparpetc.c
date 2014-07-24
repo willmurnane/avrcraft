@@ -656,7 +656,7 @@ void SwitchToBroadcast()
 
 #ifdef ARP_CLIENT_SUPPORT
 
-int8_t RequestARP( uint8_t * ip )
+int8_t RequestARP( const uint8_t * ip )
 {
 	uint8_t i;
 

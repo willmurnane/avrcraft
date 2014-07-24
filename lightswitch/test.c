@@ -210,7 +210,7 @@ ISR(PCINT2_vect)
 	PCIFR |= _BV(2);
 }
 
-const uint8_t lightDest = { 192, 168, 0, 49 };
+const uint8_t lightDest[] = { 192, 168, 0, 49 };
 
 int main( void )
 {
@@ -283,7 +283,7 @@ int main( void )
 				int macIndex = RequestARP(lightDest);
 				if (macIndex != -1)
 				{
-					memcpy(macfrom, ClientArpTable[i].mac, 6);
+					memcpy(macfrom, ClientArpTable[macIndex].mac, 6);
 				}
 				
 				enc424j600_startsend( NetGetScratch() );

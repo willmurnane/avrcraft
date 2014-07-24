@@ -127,6 +127,8 @@
 //Do this to disable printf's and save space
 #define MUTE_PRINTF
 
+#define ARP_CLIENT_SUPPORT
+#define ARP_CLIENT_TABLE_SIZE 16
 //Do we want to debug the ethernet?
 //#define ETH_DEBUG
 

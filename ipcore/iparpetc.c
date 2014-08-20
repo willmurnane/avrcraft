@@ -14,8 +14,15 @@
 unsigned long icmp_in = 0;
 unsigned long icmp_out = 0;
 
-unsigned char macfrom[6];
-unsigned char ipsource[4];
+struct MAC macfrom;
+struct IpAddress ipsource;
+struct MAC GatewayMac;
+#ifdef DO_DNS
+struct IpAddress dnsserver;
+#endif
+#ifdef DO_NTP
+struct IpAddress ntpserver;
+#endif
 unsigned short remoteport;
 unsigned short localport;
 static unsigned short iptotallen;
@@ -162,9 +169,17 @@ void HandleDHCP( uint16_t len )
 			enc424j600_finish_callback_now();
 			if( is_ack_packet )
 				GotDHCPLease();
-			return; 
+			return;
+#ifdef DO_NTP
 		case 0x42: //Time server
+			enc424j600_popblob( &ntpserver, 4 );
+			break;
+#endif
+#ifdef DO_DNS
 		case 0x06: //DNS server
+			enc424j600_popblob( &dnsserver, 4 );
+			break;
+#endif
 		default:
 			break;
 		}
@@ -281,18 +296,17 @@ void RequestNewIP( uint8_t mode, uint8_t * negotiating_ip, uint8_t * dhcp_server
 
 #endif
 
-
 void send_etherlink_header( unsigned short type )
 {
-	PUSHB( macfrom, 6 );
+	PUSHB( macfrom.Address, sizeof(macfrom) );
 
 // The mac does this for us.
-	PUSHB( MyMAC, 6 );
+	PUSHB( MyMAC.Address, sizeof(MyMAC) );
 
 	PUSH16( type );
 }
 
-void send_ip_header( unsigned short totallen, const unsigned char * to, unsigned char proto )
+void send_ip_header( unsigned short totallen, const struct IpAddress to, unsigned char proto )
 {
 /*
 	//This uses about 50 bytes less of flash, but 12 bytes more of ram.  You can choose that tradeoff.
@@ -314,15 +328,13 @@ void send_ip_header( unsigned short totallen, const unsigned char * to, unsigned
 
 	PUSH16( 0 ); //Checksum
 
-	PUSHB( MyIP, 4 );
-	PUSHB( to, 4 );
+	PUSHB( MyIP.Bytes, 4 );
+	PUSHB( to.Bytes, 4 );
 }
 
 
 static void HandleICMP()
 {
-	unsigned short id;
-	unsigned short seqnum;
 	unsigned char type;
 	unsigned short payloadsize = iptotallen - SIZEOFICMP;
 
@@ -426,7 +438,7 @@ static void HandleArp( )
 
 		//Target IP (check for copy)
 		for( i = 0; i < 4; i++ )
-			if( POP != MyIP[i] )
+			if( POP != MyIP.Bytes[i] )
 				match = 0;
 
 		if( match == 0 )
@@ -442,8 +454,8 @@ static void HandleArp( )
 		PUSH16( 0x0604 ); //HW size, Proto size
 		PUSH16( 0x0002 ); //Reply
 
-		PUSHB( MyMAC, 6 );
-		PUSHB( MyIP, 4 );
+		PUSHB( MyMAC.Address, sizeof(MyMAC) );
+		PUSHB( MyIP.Bytes, sizeof(MyIP) );
 		PUSHB( sendermac_ip_and_targetmac, 10 ); // do not send target mac.
 
 		enc424j600_endsend();
@@ -485,8 +497,6 @@ static void HandleArp( )
 
 void enc424j600_receivecallback( uint16_t packetlen )
 {
-	uint8_t is_the_packet_for_me = 1;
-	unsigned char i;
 	unsigned char ipproto;
 
 	//First and foremost, make sure we have a big enough packet to work with.
@@ -501,7 +511,7 @@ void enc424j600_receivecallback( uint16_t packetlen )
 	//macto (ignore) our mac filter handles this.
 	enc424j600_dumpbytes( 6 );
 
-	POPB( macfrom, 6 );
+	POPB( macfrom.Address, 6 );
 
 	//Make sure it's ethernet!
 	if( POP != 0x08 )
@@ -539,38 +549,26 @@ void enc424j600_receivecallback( uint16_t packetlen )
 
 	POP16; //header checksum
 
-	POPB( ipsource, 4 );
+	POPB( ipsource.Bytes, 4 );
 
-
-	for( i = 0; i < 4; i++ )
-	{
-		unsigned char m = ~MyMask[i];
-		unsigned char ch = POP;
-		if( ch == MyIP[i] || (ch & m) == 0xff  ) continue;
-		is_the_packet_for_me = 0;
-	}
-
+#ifdef ENABLE_DHCP_CLIENT
 	//Tricky, for DHCP packets, we have to detect it even if it is not to us.
 	if( ipproto == 17 )
 	{
 		remoteport = POP16;
 		localport = POP16;
-#ifdef ENABLE_DHCP_CLIENT
 		if( localport == 68 && !dhcp_seconds_remain )
 		{
 			HandleDHCP( POP16 );
 			return;
 		}
-#endif
 	}
+#endif
 
-	if( !is_the_packet_for_me )
-	{
-#ifdef ETH_DEBUG
-		sendstr( "not for me\n" );
-#endif
+	struct IpAddress incomingAddress = { .Address = enc424j600_pop32() };
+	
+	if ((incomingAddress.Address & ~MyMask.Address) != 0xFFFFFFFF)
 		return;
-	}
 
 	//XXX TODO Handle IPL > 5  (IHL?)
 
@@ -651,7 +649,7 @@ void SwitchToBroadcast()
 {
 	//Set the address we want to send to (broadcast)
 	for( i = 0; i < 6; i++ )
-		macfrom[i] = 0xff;
+		macfrom.Address[i] = 0xff;
 }
 
 #ifdef ARP_CLIENT_SUPPORT
@@ -749,5 +747,4 @@ void DoPing( uint8_t pingslot )
 }
 
 #endif
-
 

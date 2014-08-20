@@ -3,7 +3,9 @@
 #ifndef _HTTP_H
 #define _HTTP_H
 
+#ifndef __ASSEMBLY__
 #include <stdint.h>
+#endif
 #include <eth_config.h>
 
 #ifdef HTTP_USE_MEMORY_FS

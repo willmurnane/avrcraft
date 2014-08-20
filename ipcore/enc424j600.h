@@ -32,7 +32,7 @@ void espiW( uint8_t i );
 
 
 //return 0 if OK, otherwise nonzero.
-int8_t enc424j600_init( const unsigned char * macaddy );
+int8_t enc424j600_init( const struct MAC macaddy );
 
 //return 0 if OK, otherwise nonzero.
 //Packets are stored anywhere in the enc424j600's memory.
@@ -53,8 +53,9 @@ void enc424j600_finish_callback_now();
 //Raw, on-wire pops. (assuming already in read)
 void enc424j600_popblob( uint8_t * data, uint8_t len );
 void enc424j600_dumpbytes( uint8_t len );
-uint16_t enc424j600_pop16();
 #define enc424j600_pop8  espiR
+uint16_t enc424j600_pop16();
+uint32_t enc424j600_pop32();
 
 //Raw, on-wire push. (assuming already in write)
 void enc424j600_pushpgmstr( const char * msg );

@@ -1,7 +1,11 @@
 #ifndef UTIL10_H
 #define UTIL10_H
 
+#ifndef __ASSEMBLY__
 #include <stdint.h>
+#endif
+#include <string.h>
+#include <stdlib.h>
 
 //Warning: this library's 'StrTack' function uses memcpy and strlen.  Use sparingly.
 

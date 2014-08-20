@@ -1,6 +1,4 @@
 #include "util10.h"
-#include <string.h>
-#include <stdlib.h>
 
 void Uint32To10Str( char * sto, uint32_t indata )
 {

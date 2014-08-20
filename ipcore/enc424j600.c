@@ -24,6 +24,16 @@ uint16_t enc424j600_pop16()
 	return espiR() | ret;
 }
 
+uint32_t enc424j600_pop32()
+{
+	uint32_t ret;
+	for (int i = 0; i < 4; i++)
+	{
+		((uint8_t*)&ret)[i] = espiR();
+	}
+	return ret;
+}
+
 void enc424j600_push16( uint16_t v)
 {
 	espiW( v >> 8 );
@@ -151,10 +161,8 @@ static void enc_oneshot( uint8_t cmd )
 uint16_t NextPacketPointer = RX_BUFFER_START;
 
 
-int8_t enc424j600_init( const unsigned char * macaddy )
+int8_t enc424j600_init( const struct MAC macaddy )
 {
-	unsigned char i = 0;
-
 	ETPORT &= ~ETSCK;
 	ETDDR &= ~( ETSO | ETINT );
 	ETDDR |= ( ETSCK | ETSI	);
@@ -198,9 +206,9 @@ int8_t enc424j600_init( const unsigned char * macaddy )
 	//Must have RX tail here otherwise we will have difficulty moving our buffer along.
 	enc424j600_write_ctrl_reg16( EERXTAILL, 0x5FFE );
 
-	*((uint16_t*)(&MyMAC[0])) = enc424j600_read_ctrl_reg16( EMAADR1L );
-	*((uint16_t*)(&MyMAC[2])) = enc424j600_read_ctrl_reg16( EMAADR2L );
-	*((uint16_t*)(&MyMAC[4])) = enc424j600_read_ctrl_reg16( EMAADR3L );
+	MyMAC.BytePairs[0] = enc424j600_read_ctrl_reg16( EMAADR1L );
+	MyMAC.BytePairs[1] = enc424j600_read_ctrl_reg16( EMAADR2L );
+	MyMAC.BytePairs[2] = enc424j600_read_ctrl_reg16( EMAADR3L );
 
 	//Enable RX
 	enc_oneshot( ESENABLERX );
@@ -220,7 +228,6 @@ void enc424j600_startsend( uint16_t baseaddress)
 
 void enc424j600_endsend( )
 {
-	uint16_t i;
 	uint16_t es;
 	ETCSPORT |= ETCS;
 	es = enc424j600_read_ctrl_reg16( EEGPWRPTL ) - sendbaseaddress;
@@ -245,7 +252,6 @@ void enc424j600_wait_for_dma()
 
 int8_t enc424j600_xmitpacket( uint16_t start, uint16_t len )
 {
-	uint8_t retries = 0;
 	uint8_t i = 0;
 
 	enc424j600_wait_for_dma();
@@ -397,7 +403,6 @@ unsigned short enc424j600_recvpack()
 //Start a checksum
 void enc424j600_start_checksum( uint16_t start, uint16_t len )
 {
-	uint8_t i = 0;
 	enc424j600_wait_for_dma();
 	enc424j600_write_ctrl_reg16( EEDMASTL, start + sendbaseaddress );
 	enc424j600_write_ctrl_reg16( EEDMALENL, len );
@@ -408,7 +413,6 @@ void enc424j600_start_checksum( uint16_t start, uint16_t len )
 uint16_t enc424j600_get_checksum()
 {
 	uint16_t ret;
-	uint8_t i = 0;
 	enc424j600_wait_for_dma();
 	ret = enc424j600_read_ctrl_reg16( EEDMACSL );
 	return (ret >> 8 ) | ( ( ret & 0xff ) << 8 );

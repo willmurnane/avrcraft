@@ -210,7 +210,7 @@ ISR(PCINT2_vect)
 	PCIFR |= _BV(2);
 }
 
-const uint8_t lightDest[] = { 192, 168, 0, 49 };
+const uint8_t lightDest[] = { 192, 168, 0, 245 };
 
 int main( void )
 {

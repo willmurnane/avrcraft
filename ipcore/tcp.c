@@ -6,7 +6,9 @@
 //* Handle FIN correctly.
 
 #include "tcp.h"
+#ifndef __ASSEMBLY__
 #include <stdint.h>
+#endif
 #include <string.h>
 #include "avr_print.h"
 

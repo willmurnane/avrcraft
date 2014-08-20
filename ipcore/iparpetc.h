@@ -3,15 +3,17 @@
 #ifndef _IPARPETC_H
 #define _IPARPETC_H
 
-#ifndef __ASSEMBLY__
-#include <stdint.h>
-#endif
 #ifdef INCLUDE_TCP
 #include "tcp.h"
 #endif
 
 #define IP_HEADER_LENGTH 20
 
+#ifndef __ASSEMBLY__
+
+#define ipsource_uint ((uint32_t*)&ipsource)
+
+#include <stdint.h>
 //enc28j60 calls this.
 void enc28j60_receivecallback( uint16_t packetlen );
 
@@ -61,9 +63,6 @@ void SwitchToBroadcast();
 void send_etherlink_header( unsigned short type );
 void send_ip_header( unsigned short totallen, const struct IpAddress to, unsigned char proto );
 void util_finish_udp_packet();
-
-#define ipsource_uint ((uint32_t*)&ipsource)
-
 #ifdef INCLUDE_TCP
 void HandleTCP( uint16_t iptotallen );
 #endif
@@ -134,6 +133,7 @@ inline void SetupDHCPName( const char * name  ) { }
 inline void TickDHCP() { }
 #endif
 
+#endif
 
 #endif
 

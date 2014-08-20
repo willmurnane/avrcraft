@@ -7,7 +7,7 @@
 
 #include <avr/io.h>
 
-#define ASSEMBLY
+#define __ASSEMBLY__
 #include "enc424j600.h"
 
 #ifdef ASM_SPI

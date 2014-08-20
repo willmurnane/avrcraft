@@ -14,7 +14,7 @@
 #define espiW espiW_asm
 #endif
 
-#ifndef ASSEMBLY
+#ifndef __ASSEMBLY__
 
 uint8_t espiR();
 void espiW( uint8_t i );
